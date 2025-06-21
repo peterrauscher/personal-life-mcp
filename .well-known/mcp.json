@@ -1,0 +1,8 @@
+{
+  "manifest_version": "1",
+  "name": "iOS Reminder Creator",
+  "description": "Creates iOS reminders via Make.com webhook",
+  "entry_point": "/create_reminder",
+  "methods": ["POST"],
+  "required_fields": ["title", "startDate", "dueDate", "alarm", "note"]
+}
