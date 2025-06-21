@@ -1,6 +1,7 @@
 import os
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -8,11 +9,27 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CREATE_REMINDER_WEBHOOK_URL = os.environ.get("CREATE_REMINDER_WEBHOOK_URL")
+BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
 
 app = FastAPI(
     title="Peter's Life Assistant API",
     version="0.1.0",
 )
+
+bearer_scheme = HTTPBearer()
+
+
+def validate_token(credentials: str = Depends(bearer_scheme)):
+    if not BEARER_TOKEN:
+        raise HTTPException(
+            status_code=500, detail="Authentication token not configured on server"
+        )
+    if credentials.credentials != BEARER_TOKEN:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
 
 class Reminder(BaseModel):
@@ -23,7 +40,7 @@ class Reminder(BaseModel):
     note: str
 
 
-@app.post("/create_reminder", status_code=201)
+@app.post("/create_reminder", status_code=201, dependencies=[Depends(validate_token)])
 async def create_reminder(reminder: Reminder):
     """
     Receives reminder data, validates it, and forwards it to a webhook.
